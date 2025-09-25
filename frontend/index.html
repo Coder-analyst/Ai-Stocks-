@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Powered Insider Trading Detector</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        /* Scrollbar styling for dark theme */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #1a1a2e;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: #00ff88;
+            border-radius: 4px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00d46a;
+        }
+        
+        /* Selection styling */
+        ::selection {
+            background: rgba(0, 255, 136, 0.3);
+            color: #ffffff;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+            color: #e0e6ed;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 1.5rem 2rem;
+            border-bottom: 3px solid #00ff88;
+            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.1);
+        }
+        
+        .header h1 {
+            color: #00ff88;
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        }
+        
+        .header p {
+            color: #b8c5d1;
+            font-size: 1.1rem;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #1e1e3f 0%, #2a2a4a 100%);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border-left: 4px solid #00ff88;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 255, 136, 0.2);
+        }
+        
+        .stat-card.danger {
+            border-left-color: #ff4757;
+            background: linear-gradient(135deg, #3f1e1e 0%, #4a2a2a 100%);
+        }
+        
+        .stat-card.danger:hover {
+            box-shadow: 0 12px 40px rgba(255, 71, 87, 0.2);
+        }
+        
+        .stat-card.info {
+            border-left-color: #3742fa;
+            background: linear-gradient(135deg, #1e1e3f 0%, #2a2a4a 100%);
+        }
+        
+        .stat-card.info:hover {
+            box-shadow: 0 12px 40px rgba(55, 66, 250, 0.2);
+        }
+        
+        .stat-card.purple {
+            border-left-color: #a55eea;
+            background: linear-gradient(135deg, #2e1e3f 0%, #3a2a4a 100%);
+        }
+        
+        .stat-card.purple:hover {
+            box-shadow: 0 12px 40px rgba(165, 94, 234, 0.2);
+        }
+        
+        .stat-number {
+            font-size: 2.8rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+        }
+        
+        .stat-label {
+            color: #b8c5d1;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+        
+        .chart-container {
+            background: linear-gradient(135deg, #1e1e3f 0%, #2a2a4a 100%);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .chart-title {
+            color: #00ff88;
+            font-size: 1.4rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            font-weight: 600;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        }
+        
+        .ticker-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        
+        .ticker-card {
+            background: linear-gradient(135deg, #1e1e3f 0%, #2a2a4a 100%);
+            border-radius: 10px;
+            padding: 1.2rem;
+            backdrop-filter: blur(15px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .ticker-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(0, 255, 136, 0.1);
+        }
+        
+        .ticker-name {
+            color: #00ff88;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 5px rgba(0, 255, 136, 0.3);
+        }
+        
+        .ticker-price {
+            font-size: 1.6rem;
+            margin-bottom: 0.3rem;
+            color: #ffffff;
+            font-weight: 600;
+        }
+        
+        .ticker-change {
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+        
+        .positive { 
+            color: #00ff88; 
+            text-shadow: 0 0 5px rgba(0, 255, 136, 0.3);
+        }
+        .negative { 
+            color: #ff4757; 
+            text-shadow: 0 0 5px rgba(255, 71, 87, 0.3);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(0, 255, 136, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0); }
+        }
+        
+        .status-online { 
+            background-color: #00ff88;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+        .status-warning { 
+            background-color: #ff4757;
+            box-shadow: 0 0 10px rgba(255, 71, 87, 0.5);
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: #b8c5d1;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: 3rem;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 100%);
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #00ff88 0%, #00d46a 100%);
+            color: #0f0f23;
+            border: none;
+            padding: 0.9rem 1.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 255, 136, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn:hover {
+            background: linear-gradient(135deg, #00d46a 0%, #00ff88 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 255, 136, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(135deg, #ff4757 0%, #ff3742 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
+        }
+        
+        .btn-danger:hover {
+            background: linear-gradient(135deg, #ff3742 0%, #ff4757 100%);
+            box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
+        }
+        
+        .anomaly-card {
+            background: rgba(191, 64, 64, 0.1);
+            border: 1px solid #bf4040;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .anomaly-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .anomaly-ticker {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #27d853;
+        }
+        
+        .risk-score {
+            background: #bf4040;
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        .risk-score.high {
+            background: #bf4040;
+        }
+        
+        .risk-score.medium {
+            background: #ff8c00;
+        }
+        
+        .risk-score.low {
+            background: #ffd700;
+            color: #333;
+        }
+        
+        .anomaly-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .anomaly-metric {
+            background: rgba(255,255,255,0.1);
+            padding: 0.8rem;
+            border-radius: 5px;
+        }
+        
+        .metric-label {
+            font-size: 0.8rem;
+            color: #90886f;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .metric-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-top: 0.3rem;
+        }
+        
+        .anomaly-explanation {
+            background: rgba(255,255,255,0.05);
+            padding: 1rem;
+            border-radius: 5px;
+            border-left: 3px solid #bf4040;
+            font-style: italic;
+        }
+        
+        .anomaly-timestamp {
+            font-size: 0.8rem;
+            color: #90886f;
+            margin-top: 0.5rem;
+        }
+        
+        .no-anomalies {
+            text-align: center;
+            padding: 2rem;
+            color: #90886f;
+        }
+        
+        .severity-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .severity-high { background-color: #bf4040; }
+        .severity-medium { background-color: #ff8c00; }
+        .severity-low { background-color: #ffd700; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🚨 AI-Powered Insider Trading Detector</h1>
+        <p>Real-time anomaly detection for financial markets using machine learning</p>
+    </div>
+    
+    <div class="container">
+        <!-- System Status -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="totalTickers">10</div>
+                <div class="stat-label">Monitored Tickers</div>
+            </div>
+            <div class="stat-card info">
+                <div class="stat-number" id="totalRecords">225</div>
+                <div class="stat-label">Market Records</div>
+            </div>
+            <div class="stat-card danger">
+                <div class="stat-number" id="totalAnomalies">0</div>
+                <div class="stat-label">Anomalies Detected</div>
+            </div>
+            <div class="stat-card purple">
+                <div class="stat-number">
+                    <span class="status-indicator status-online"></span>
+                    Online
+                </div>
+                <div class="stat-label">System Status</div>
+            </div>
+        </div>
+        
+        <!-- Price Chart -->
+        <div class="chart-container">
+            <div class="chart-title">📈 Market Overview - RELIANCE.NS Price Trend</div>
+            <canvas id="priceChart" width="400" height="200"></canvas>
+        </div>
+        
+        <!-- Controls -->
+        <div style="text-align: center; margin: 2rem 0;">
+            <button class="btn" onclick="refreshData()">🔄 Refresh Data</button>
+            <button class="btn btn-danger" onclick="runDetection()">🚨 Run Anomaly Detection</button>
+        </div>
+        
+        <!-- Anomalies Section -->
+        <div class="chart-container">
+            <div class="chart-title">🚨 Detected Anomalies & Suspicious Patterns</div>
+            <div id="anomaliesContainer">
+                <!-- Will be populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Ticker Cards -->
+        <div class="ticker-grid" id="tickerGrid">
+            <!-- Will be populated by JavaScript -->
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>🤖 Powered by IsolationForest ML • 📊 Real-time market data • 🔒 Secure anomaly detection</p>
+        <p style="margin-top: 0.5rem; font-size: 0.8rem;">
+            Built with Python, FastAPI, scikit-learn, and Chart.js
+        </p>
+    </div>
+
+    <script>
+        // Sample detected anomalies (in production, this would come from the API)
+        const detectedAnomalies = [
+            {
+                id: 1,
+                ticker: 'RELIANCE.NS',
+                timestamp: '2025-09-24T14:30:00Z',
+                score: 0.95,
+                severity: 'high',
+                model: 'IsolationForest + Autoencoder',
+                reason: {
+                    volume_spike: 4.2,
+                    price_momentum: 2.8,
+                    unusual_timing: true,
+                    sector_divergence: 3.1
+                },
+                explanation: 'Massive volume spike (4.2σ above normal) detected 15 minutes before market close, combined with unusual price momentum. Pattern similar to historical insider trading cases.',
+                raw_data: {
+                    current_volume: 85000000,
+                    normal_volume: 12000000,
+                    price_change: 15.5,
+                    time_to_close: 15
+                }
+            },
+            {
+                id: 2,
+                ticker: 'TCS.NS',
+                timestamp: '2025-09-24T11:45:00Z',
+                score: 0.87,
+                severity: 'high',
+                model: 'Statistical Analysis',
+                reason: {
+                    cross_correlation: 2.9,
+                    volume_pattern: 3.4,
+                    price_synchronization: true
+                },
+                explanation: 'Synchronized trading pattern detected across TCS and related IT stocks. Unusual correlation suggests coordinated activity.',
+                raw_data: {
+                    correlation_score: 0.94,
+                    normal_correlation: 0.65,
+                    synchronized_stocks: ['INFY.NS', 'WIPRO.NS', 'HCLTECH.NS']
+                }
+            },
+            {
+                id: 3,
+                ticker: 'HDFCBANK.NS',
+                timestamp: '2025-09-24T09:20:00Z',
+                score: 0.73,
+                severity: 'medium',
+                model: 'Time Series Analysis',
+                reason: {
+                    pre_market_activity: 2.1,
+                    volume_concentration: 1.8,
+                    timing_anomaly: true
+                },
+                explanation: 'Unusual pre-market trading activity with concentrated volume from limited sources. Timing suggests potential information advantage.',
+                raw_data: {
+                    pre_market_volume: 2500000,
+                    regular_pre_market: 450000,
+                    concentration_ratio: 0.78
+                }
+            },
+            {
+                id: 4,
+                ticker: 'INFY.NS',
+                timestamp: '2025-09-24T13:15:00Z',
+                score: 0.68,
+                severity: 'medium',
+                model: 'Behavioral Analysis',
+                reason: {
+                    account_clustering: 2.3,
+                    trade_size_anomaly: 1.9,
+                    frequency_pattern: true
+                },
+                explanation: 'Multiple accounts showing similar trading patterns with unusual trade sizes. Behavioral analysis suggests potential coordinated activity.',
+                raw_data: {
+                    suspicious_accounts: 12,
+                    average_trade_size: 50000,
+                    normal_trade_size: 15000
+                }
+            },
+            {
+                id: 5,
+                ticker: 'ICICIBANK.NS',
+                timestamp: '2025-09-24T16:45:00Z',
+                score: 0.61,
+                severity: 'low',
+                model: 'News Correlation',
+                reason: {
+                    news_timing: 1.7,
+                    sentiment_divergence: 1.4,
+                    volume_news_gap: true
+                },
+                explanation: 'Trading activity preceded negative news announcement by 2 hours. Volume spike occurred before public information release.',
+                raw_data: {
+                    news_delay: 120,
+                    volume_before_news: 3200000,
+                    sentiment_score: -0.7
+                }
+            }
+        ];
+
+        // Sample Indian market data (in production, this would come from the API)
+        const marketData = {
+            'RELIANCE.NS': { price: 2845.30, change: 12.45, volume: 1234567 },
+            'TCS.NS': { price: 4123.75, change: -8.20, volume: 987654 },
+            'INFY.NS': { price: 1876.40, change: 15.60, volume: 2345678 },
+            'HDFCBANK.NS': { price: 1654.20, change: 4.30, volume: 3456789 },
+            'ICICIBANK.NS': { price: 1234.50, change: -2.10, volume: 4567890 },
+            'HINDUNILVR.NS': { price: 2567.80, change: 23.45, volume: 567890 },
+            'ITC.NS': { price: 456.75, change: -3.25, volume: 8901234 },
+            'SBIN.NS': { price: 789.60, change: 5.40, volume: 5678901 },
+            'BHARTIARTL.NS': { price: 1123.45, change: -7.80, volume: 3456789 },
+            'KOTAKBANK.NS': { price: 1789.25, change: 15.30, volume: 2345678 },
+            'WIPRO.NS': { price: 567.40, change: 8.90, volume: 4567890 },
+            'LT.NS': { price: 3456.80, change: -12.60, volume: 1234567 },
+            'MARUTI.NS': { price: 11234.50, change: 45.70, volume: 345678 },
+            'ASIANPAINT.NS': { price: 3234.60, change: -18.40, volume: 567890 },
+            'NESTLEIND.NS': { price: 2567.90, change: 12.80, volume: 234567 }
+        };
+        
+        // Initialize the dashboard
+        function initDashboard() {
+            createPriceChart();
+            populateTickerGrid();
+            populateAnomalies();
+            updateStats();
+        }
+        
+        // Create price chart
+        function createPriceChart() {
+            const ctx = document.getElementById('priceChart').getContext('2d');
+            
+            // Sample RELIANCE price data (last 30 days)
+            const dates = [];
+            const prices = [];
+            const basePrice = 2800;
+            
+            for (let i = 29; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                dates.push(date.toLocaleDateString());
+                
+                // Generate realistic price movement
+                const randomChange = (Math.random() - 0.5) * 10;
+                const price = basePrice + randomChange + (Math.sin(i * 0.1) * 5);
+                prices.push(price.toFixed(2));
+            }
+            
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [{
+                        label: 'RELIANCE Price (₹)',
+                        data: prices,
+                        borderColor: '#00ff88',
+                        backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#00ff88',
+                        pointBorderColor: '#ffffff',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            labels: { 
+                                color: '#e0e6ed',
+                                font: {
+                                    size: 14,
+                                    weight: 'bold'
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { 
+                                color: '#b8c5d1',
+                                font: { size: 12 }
+                            },
+                            grid: { 
+                                color: 'rgba(255,255,255,0.1)',
+                                borderColor: 'rgba(255,255,255,0.2)'
+                            }
+                        },
+                        y: {
+                            ticks: { 
+                                color: '#b8c5d1',
+                                font: { size: 12 }
+                            },
+                            grid: { 
+                                color: 'rgba(255,255,255,0.1)',
+                                borderColor: 'rgba(255,255,255,0.2)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Populate ticker grid
+        function populateTickerGrid() {
+            const grid = document.getElementById('tickerGrid');
+            grid.innerHTML = '';
+            
+            Object.entries(marketData).forEach(([ticker, data]) => {
+                const changeClass = data.change >= 0 ? 'positive' : 'negative';
+                const changeSymbol = data.change >= 0 ? '+' : '';
+                
+                const card = document.createElement('div');
+                card.className = 'ticker-card';
+                card.innerHTML = `
+                    <div class="ticker-name">${ticker}</div>
+                    <div class="ticker-price">₹${data.price.toFixed(2)}</div>
+                    <div class="ticker-change ${changeClass}">
+                        ${changeSymbol}₹${data.change.toFixed(2)} 
+                        (${((data.change / data.price) * 100).toFixed(2)}%)
+                    </div>
+                    <div style="font-size: 0.85rem; color: #b8c5d1; margin-top: 0.5rem; font-weight: 500;">
+                        Volume: ${data.volume.toLocaleString()}
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+        
+        // Populate anomalies section
+        function populateAnomalies() {
+            const container = document.getElementById('anomaliesContainer');
+            container.innerHTML = '';
+            
+            if (detectedAnomalies.length === 0) {
+                container.innerHTML = `
+                    <div class="no-anomalies">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">✅</div>
+                        <div style="font-size: 1.2rem; margin-bottom: 0.5rem;">No Anomalies Detected</div>
+                        <div>All monitored stocks are showing normal trading patterns</div>
+                    </div>
+                `;
+                return;
+            }
+            
+            detectedAnomalies.forEach(anomaly => {
+                const severityClass = `severity-${anomaly.severity}`;
+                const riskClass = anomaly.severity;
+                
+                const anomalyCard = document.createElement('div');
+                anomalyCard.className = 'anomaly-card';
+                
+                // Format timestamp
+                const timestamp = new Date(anomaly.timestamp).toLocaleString('en-IN', {
+                    timeZone: 'Asia/Kolkata',
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                anomalyCard.innerHTML = `
+                    <div class="anomaly-header">
+                        <div class="anomaly-ticker">
+                            <span class="severity-indicator ${severityClass}"></span>
+                            ${anomaly.ticker}
+                        </div>
+                        <div class="risk-score ${riskClass}">
+                            Risk: ${(anomaly.score * 100).toFixed(0)}%
+                        </div>
+                    </div>
+                    
+                    <div class="anomaly-details">
+                        <div class="anomaly-metric">
+                            <div class="metric-label">Detection Model</div>
+                            <div class="metric-value">${anomaly.model}</div>
+                        </div>
+                        <div class="anomaly-metric">
+                            <div class="metric-label">Confidence Score</div>
+                            <div class="metric-value">${anomaly.score.toFixed(3)}/1.000</div>
+                        </div>
+                        <div class="anomaly-metric">
+                            <div class="metric-label">Primary Factor</div>
+                            <div class="metric-value">
+                                ${Object.keys(anomaly.reason)[0].replace('_', ' ').toUpperCase()}
+                            </div>
+                        </div>
+                        <div class="anomaly-metric">
+                            <div class="metric-label">Severity Level</div>
+                            <div class="metric-value" style="color: ${
+                                anomaly.severity === 'high' ? '#bf4040' : 
+                                anomaly.severity === 'medium' ? '#ff8c00' : '#ffd700'
+                            }">
+                                ${anomaly.severity.toUpperCase()}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="anomaly-explanation">
+                        <strong>🔍 AI Analysis:</strong> ${anomaly.explanation}
+                    </div>
+                    
+                    <div class="anomaly-timestamp">
+                        📅 Detected: ${timestamp} IST | ID: #${anomaly.id.toString().padStart(4, '0')}
+                    </div>
+                `;
+                
+                container.appendChild(anomalyCard);
+            });
+        }
+
+        // Update statistics
+        function updateStats() {
+            document.getElementById('totalTickers').textContent = Object.keys(marketData).length;
+            document.getElementById('totalRecords').textContent = '225';
+            document.getElementById('totalAnomalies').textContent = detectedAnomalies.length;
+        }
+        
+        // Refresh data function
+        function refreshData() {
+            // Simulate data refresh
+            const btn = event.target;
+            btn.textContent = '🔄 Refreshing...';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                // Add some random changes to prices
+                Object.keys(marketData).forEach(ticker => {
+                    const change = (Math.random() - 0.5) * 5;
+                    marketData[ticker].price += change;
+                    marketData[ticker].change = change;
+                });
+                
+                populateTickerGrid();
+                btn.textContent = '🔄 Refresh Data';
+                btn.disabled = false;
+            }, 2000);
+        }
+        
+        // Run anomaly detection
+        function runDetection() {
+            const btn = event.target;
+            btn.textContent = '🚨 Analyzing...';
+            btn.disabled = true;
+            
+            // Simulate real-time analysis
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += 20;
+                btn.textContent = `🚨 Analyzing... ${progress}%`;
+                
+                if (progress >= 100) {
+                    clearInterval(progressInterval);
+                    
+                    // Show results
+                    const highRiskCount = detectedAnomalies.filter(a => a.severity === 'high').length;
+                    const mediumRiskCount = detectedAnomalies.filter(a => a.severity === 'medium').length;
+                    const lowRiskCount = detectedAnomalies.filter(a => a.severity === 'low').length;
+                    
+                    let alertMessage = `🚨 ANOMALY DETECTION COMPLETE\n\n`;
+                    alertMessage += `📊 Analysis Results:\n`;
+                    alertMessage += `• High Risk: ${highRiskCount} patterns\n`;
+                    alertMessage += `• Medium Risk: ${mediumRiskCount} patterns\n`;
+                    alertMessage += `• Low Risk: ${lowRiskCount} patterns\n\n`;
+                    
+                    if (highRiskCount > 0) {
+                        alertMessage += `⚠️ IMMEDIATE ACTION REQUIRED\n`;
+                        alertMessage += `High-risk patterns detected in:\n`;
+                        detectedAnomalies
+                            .filter(a => a.severity === 'high')
+                            .forEach(a => alertMessage += `• ${a.ticker}\n`);
+                    } else {
+                        alertMessage += `✅ No high-risk patterns detected\n`;
+                        alertMessage += `Markets showing normal activity`;
+                    }
+                    
+                    alert(alertMessage);
+                    
+                    // Refresh anomalies display
+                    populateAnomalies();
+                    updateStats();
+                    
+                    btn.textContent = '🚨 Run Anomaly Detection';
+                    btn.disabled = false;
+                }
+            }, 600);
+        }
+        
+        // Initialize dashboard when page loads
+        document.addEventListener('DOMContentLoaded', initDashboard);
+        
+        // Auto-refresh every 30 seconds
+        setInterval(() => {
+            if (!document.querySelector('button:disabled')) {
+                refreshData();
+                // Also refresh anomalies occasionally
+                if (Math.random() < 0.3) { // 30% chance
+                    populateAnomalies();
+                }
+            }
+        }, 30000);
+    </script>
+</body>
+</html>
